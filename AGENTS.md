@@ -11,3 +11,7 @@ npm run test     # Run all tests to ensure your changes don't break anything
 ```
 
 Following these steps helps maintain code quality and consistency across the project.
+
+## Additional Rules
+
+- Do not add exports in `src/index.ts`.
