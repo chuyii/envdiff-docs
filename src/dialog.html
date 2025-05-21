@@ -5,7 +5,7 @@
   <input id="submit" type="submit" value="Import" />
 </form>
 <script>
-  document.getElementById('form').addEventListener('submit', function (e) {
+  function handleSubmit(e) {
     e.preventDefault();
     const button = document.getElementById('submit');
     button.disabled = true;
@@ -13,6 +13,7 @@
     const file = fileInput.files[0];
     if (!file) {
       alert('Please select a file');
+      button.disabled = false;
       return;
     }
     const reader = new FileReader();
@@ -25,5 +26,6 @@
         .addReportToDoc(content);
     };
     reader.readAsText(file);
-  });
+  }
+  document.getElementById('form').addEventListener('submit', handleSubmit);
 </script>

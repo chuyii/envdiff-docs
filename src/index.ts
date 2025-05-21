@@ -1,3 +1,6 @@
+import { DocumentBuilder } from './docBuilder';
+import type { EnvDiffReport } from './types';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onOpen() {
   DocumentApp.getUi()
@@ -15,64 +18,6 @@ function showImportDialog() {
   );
 }
 
-interface ReportMetadata {
-  generated_on?: string;
-  container_tool?: string;
-  title?: string;
-  description?: string;
-}
-
-interface CopyFile {
-  src: string;
-  dest: string;
-}
-
-interface Prepare {
-  commands?: string[];
-  copy_files?: CopyFile[];
-}
-
-interface MainOperation {
-  commands?: string[];
-}
-
-interface Definitions {
-  base_image?: string;
-  prepare?: Prepare;
-  main_operation?: MainOperation;
-  target_dirs?: string[];
-  exclude_paths?: string[];
-  omit_diff_paths?: string[];
-  command_diff?: { command: string; outfile: string }[];
-}
-
-interface OperationResult {
-  command: string;
-  stdout: string;
-  stderr: string;
-  return_code: number;
-}
-
-interface CommandOutput {
-  command: string;
-  diff_file: string;
-  diff_content: string;
-}
-
-interface DiffReports {
-  filesystem_rq?: string[];
-  filesystem_urN?: string[];
-  command_outputs?: CommandOutput[];
-}
-
-interface EnvDiffReport {
-  report_metadata?: ReportMetadata;
-  definitions?: Definitions;
-  main_operation_results?: OperationResult[];
-  diff_reports?: DiffReports;
-  [key: string]: unknown;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function addReportToDoc(json: string) {
   let reports: EnvDiffReport[];
@@ -86,60 +31,11 @@ function addReportToDoc(json: string) {
     return;
   }
 
-  const requests: GoogleAppsScript.Docs.Schema.Request[] = [];
-  let index = 1;
-
-  const insertText = (text: string) => {
-    requests.push({ insertText: { location: { index }, text: `${text}\n` } });
-    index += text.length + 1;
-  };
-
-  const insertBoldText = (text: string) => {
-    requests.push({ insertText: { location: { index }, text: `${text}\n` } });
-    requests.push({
-      updateTextStyle: {
-        range: { startIndex: index, endIndex: index + text.length + 1 },
-        textStyle: { bold: true },
-        fields: 'bold',
-      },
-    });
-    index += text.length + 1;
-  };
-
-  const addHeading = (text: string) => {
-    const startIndex = index;
-    insertText(text);
-    requests.push({
-      updateParagraphStyle: {
-        range: { startIndex, endIndex: index },
-        paragraphStyle: { namedStyleType: 'HEADING_1' },
-        fields: 'namedStyleType',
-      },
-    });
-    requests.push({
-      updateTextStyle: {
-        range: { startIndex, endIndex: index },
-        textStyle: { bold: true, fontSize: { magnitude: 11, unit: 'PT' } },
-        fields: 'bold,fontSize',
-      },
-    });
-  };
-
-  const createBullets = (text: string) => {
-    const startIndex = index;
-    insertText(text);
-    index = startIndex + text.replace(/^\t*/gm, '').length + 1;
-    requests.push({
-      createParagraphBullets: {
-        range: { startIndex, endIndex: index },
-        bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE',
-      },
-    });
-  };
+  const builder = new DocumentBuilder();
 
   reports.forEach(report => {
     const title = report.report_metadata?.title ?? 'EnvDiff Report';
-    addHeading(title);
+    builder.addHeading(title);
 
     if (report.report_metadata) {
       const meta = report.report_metadata;
@@ -153,8 +49,8 @@ function addReportToDoc(json: string) {
         lines.push(`\t${meta.description}`);
       }
       if (lines.length > 0) {
-        insertBoldText('Metadata');
-        createBullets(
+        builder.insertBoldText('Metadata');
+        builder.createBullets(
           lines.map(line => line.replace(/\n/g, '\x0b')).join('\n')
         );
       }
@@ -189,9 +85,9 @@ function addReportToDoc(json: string) {
         defLines.push(`Omit diff paths: ${defs.omit_diff_paths.join(', ')}`);
       }
       if (defLines.length > 0) {
-        insertText('');
-        insertBoldText('Definitions');
-        createBullets(
+        builder.insertText('');
+        builder.insertBoldText('Definitions');
+        builder.createBullets(
           defLines.map(line => line.replace(/\n/g, '\x0b')).join('\n')
         );
       }
@@ -205,9 +101,9 @@ function addReportToDoc(json: string) {
         if (r.stderr) lines.push(`\tstderr:\n${r.stderr}`);
       });
       if (lines.length > 0) {
-        insertText('');
-        insertBoldText('Main Operation Results');
-        createBullets(
+        builder.insertText('');
+        builder.insertBoldText('Main Operation Results');
+        builder.createBullets(
           lines.map(line => line.replace(/\n/g, '\x0b')).join('\n')
         );
       }
@@ -232,14 +128,16 @@ function addReportToDoc(json: string) {
         });
       }
 
-      insertText('');
-      insertBoldText('Diff Reports');
-      createBullets(lines.map(line => line.replace(/\n/g, '\x0b')).join('\n'));
+      builder.insertText('');
+      builder.insertBoldText('Diff Reports');
+      builder.createBullets(
+        lines.map(line => line.replace(/\n/g, '\x0b')).join('\n')
+      );
     }
   });
 
   Docs.Documents!.batchUpdate(
-    { requests },
+    { requests: builder.requests },
     DocumentApp.getActiveDocument().getId()
   );
 }
