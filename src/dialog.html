@@ -1,39 +1,29 @@
-<!doctype html>
-<html>
-  <head>
-    <base target="_top" />
-  </head>
-  <body>
-    <form id="form">
-      <p>
-        <label>Report JSON:<input type="file" id="file" /></label>
-      </p>
-      <p>
-        <label>Docs ID:<input type="text" id="docId" /></label>
-      </p>
-      <input type="submit" value="Import" />
-    </form>
-    <script>
-      document.getElementById('form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const fileInput = document.getElementById('file');
-        const docId = document.getElementById('docId').value;
-        const file = fileInput.files[0];
-        if (!file) {
-          alert('Please select a file');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-          const content = ev.target.result;
-          google.script.run
-            .withSuccessHandler(function () {
-              google.script.host.close();
-            })
-            .addReportToDoc(content, docId);
-        };
-        reader.readAsText(file);
-      });
-    </script>
-  </body>
-</html>
+<form id="form">
+  <p>
+    <label>Report JSON:<input type="file" id="file" /></label>
+  </p>
+  <input id="submit" type="submit" value="Import" />
+</form>
+<script>
+  document.getElementById('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const button = document.getElementById('submit');
+    button.disabled = true;
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert('Please select a file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const content = ev.target.result;
+      google.script.run
+        .withSuccessHandler(function () {
+          google.script.host.close();
+        })
+        .addReportToDoc(content);
+    };
+    reader.readAsText(file);
+  });
+</script>
