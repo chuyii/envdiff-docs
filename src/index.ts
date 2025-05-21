@@ -60,6 +60,15 @@ function addReportToDoc(json: string) {
       const defLines: string[] = [];
       const defs = report.definitions;
       if (defs.base_image) defLines.push(`base_image: ${defs.base_image}`);
+      if (Array.isArray(defs.target_dirs)) {
+        defLines.push(`Target dirs: ${defs.target_dirs.join(', ')}`);
+      }
+      if (Array.isArray(defs.exclude_paths)) {
+        defLines.push(`Exclude paths: ${defs.exclude_paths.join(', ')}`);
+      }
+      if (Array.isArray(defs.omit_diff_paths)) {
+        defLines.push(`Omit diff paths: ${defs.omit_diff_paths.join(', ')}`);
+      }
       if (defs.prepare) {
         defLines.push('prepare:');
         if (Array.isArray(defs.prepare.copy_files)) {
@@ -74,15 +83,6 @@ function addReportToDoc(json: string) {
             defLines.push(`\t\t${c}`);
           }
         }
-      }
-      if (Array.isArray(defs.target_dirs)) {
-        defLines.push(`Target dirs: ${defs.target_dirs.join(', ')}`);
-      }
-      if (Array.isArray(defs.exclude_paths)) {
-        defLines.push(`Exclude paths: ${defs.exclude_paths.join(', ')}`);
-      }
-      if (Array.isArray(defs.omit_diff_paths)) {
-        defLines.push(`Omit diff paths: ${defs.omit_diff_paths.join(', ')}`);
       }
       if (defLines.length > 0) {
         builder.insertText('');
